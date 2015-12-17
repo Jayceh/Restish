@@ -291,11 +291,47 @@ nest_a_nest_b_foo
 )], "Correct nested setup");
 
 
-my $ip = '127.0.0.1';
-$obj = Bam->new({api_ip => $ip});
-$out = eval { $obj->hello } || diag "$@";
-Test::Deep::cmp_deeply(
-    $out,
-    { api_brand => undef, api_ip => $ip, args => { }, server_time => Test::Deep::ignore() },
-    'Call hello method'
-);
+my $api_ip      = '127.0.0.1';
+my $api_brand   = 'bamaroo';
+my $remote_ip   = '10.10.10.10';
+my $remote_user = 'bambam';
+$obj = Bam->new({
+    api_ip      => $api_ip,
+    api_brand   => $api_brand,
+    remote_ip   => $remote_ip,
+    remote_user => $remote_user,
+    is_server   => 1,
+});
+
+my $hello_expect = {
+    api_brand   => $api_brand,
+    api_ip      => $api_ip,
+    args        => { },
+    server_time => Test::Deep::ignore()
+};
+
+$out = eval { $obj->hello };
+diag "$@" unless defined $out;
+Test::Deep::cmp_deeply($out, $hello_expect, 'Call hello method');
+
+$out = eval { $obj->run_method('hello') };
+diag "$@" unless defined $out;
+Test::Deep::cmp_deeply($out, $hello_expect, 'Call "hello" via run_method');
+
+$out = eval { $obj->json };
+diag "$@" unless defined $out;
+isa_ok($out, 'JSON', 'Call json method');
+
+$out = eval { $obj->remote_ip };
+diag "$@" unless defined $out;
+is($out, $remote_ip, 'Call remote_ip method');
+
+$out = eval { $obj->who } || diag "$@";
+diag "$@" unless defined $out;
+is($out, $remote_user, 'Call who method');
+
+$out = eval { $obj->is_server };
+diag "$@" unless defined $out;
+is($out, 1, 'Call is_server method');
+
+
